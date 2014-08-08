@@ -6,15 +6,21 @@ class CurveService {
         $ips = array();
         foreach($list as $key => $info){
             if(empty($lines[$info['page']])){
-                $lines[$info['page']] = array();
+                $lines[$info['page']] = array("num"=>0,"points"=>array());
             }
-            if(empty($lines[$info['page']][$info["_id"]->getTimestamp()])){
-                $lines[$info['page']][$info["_id"]->getTimestamp()] = 0;
+            $line = &$lines[$info['page']];
+            $pointkey = $info["_id"]->getTimestamp();
+            if(empty($line["points"][$pointkey])){
+                $line["points"][$pointkey] = 0;
             }
-            $lines[$info['page']][$info["_id"]->getTimestamp()] += $info['n'];
+            
+            $line["points"][$pointkey] += $info['n'];
             if (!in_array($info['ip'], $ips)){
                 $ips[] = $info['ip'];
             }
+        }
+        foreach($lines as $linename => &$line) {
+            $line["num"] = count($line['points']);
         }
         return array("lines"=>$lines,'ips'=>$ips);
     }

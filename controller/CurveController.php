@@ -33,9 +33,11 @@ class CurveController extends MyController
         $curveid = CHttpRequestInfo::Get('curveid');
         $day = CHttpRequestInfo::Get('day',Date("Y-m-d"));
         $timestamp = strtotime($day);
-        $curvelist = ProjectService::QueryCurve(array("curveid"=>$curveid));
+        $interval = 5 * 60;
+        
         $ret = CurveService::GetActionData($projectid, $curveid, $timestamp);
-        OutputManager::output(array('code'=>0,'message'=>'success','data'=>$ret),'json');
+        OutputManager::output(array('code'=>0,'message'=>'success','data'=>
+                array_merge($ret, array('interval'=>$interval, 'begintime'=>$timestamp))),'json');
         //$this->renderPartial('curvepage');
     }
     public function actionLoadLineTest()
