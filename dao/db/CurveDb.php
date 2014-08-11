@@ -20,4 +20,11 @@ class CurveDb extends CBaseMongoDb
         $collection = "action_" . $projectid . '_' . date("Y_m_d",$timestamp);
 		return $this->queryByArray($collection,$conditions,$start,$num);
 	}
+    public function queryDistinctKey($projectid, $timestamp, $key, $conditions) 
+    {
+        $this->database = ConfigManager::$config['params']['database']['monitor_action']['database'].'_'.date("Y_m", $timestamp);
+        $collection = "action_" . $projectid . '_' . date("Y_m_d",$timestamp);
+		$ret = $this->distinct($collection,$key,$conditions);
+        return @$ret['values'];
+    }
 }

@@ -22,11 +22,15 @@ $(document).ready(function(){
             	<a href="javascript:void(0);" class="first"><?php echo $item["name"];?></a>
                 <span class="arrow"></span>
                 <ul class="sub">
-    			    <li onclick="SelectThis(this);CurveManager.LoadCurve('<?php echo $projectinfo['_id'];?>','<?php echo $curveid;?>');">
-                    	<a href="javascript:void(0);">动作统计</a>
+    			    <li onclick="SelectThis(this);CurveManager.LoadActionCurve('<?php echo $projectinfo['_id'];?>','<?php echo $curveid;?>');">
+                    	<a href="javascript:void(0);">动作对比统计</a>
                 		<span class="arrow"></span>
                     </li>
-                	<li>
+    			    <li onclick="SelectThis(this);CurveManager.LoadDateCurve('<?php echo $projectinfo['_id'];?>','<?php echo $curveid;?>');">
+                    	<a href="javascript:void(0);">日期对比统计</a>
+                		<span class="arrow"></span>
+                    </li>
+                	<li onclick="SelectThis(this);CurveManager.LoadDailyReport('<?php echo $projectinfo['_id'];?>','<?php echo $curveid;?>');">
                     	<a href="javascript:void(0);">日统计</a>
                 		<span class="arrow"></span>
                     </li>
@@ -51,7 +55,7 @@ $(document).ready(function(){
 	   function(){ $(this).parent().addClass("unfold");}
 	   )
     var curveid = '<?php $ids = array_keys($curvelist); echo @$ids[0];?>';
-    CurveManager.LoadCurve('<?php echo $projectinfo['_id'];?>', curveid);
+    CurveManager.LoadActionCurve('<?php echo $projectinfo['_id'];?>', curveid);
     $("#id_ul_list li ul li :first").addClass("cur");
 })
 

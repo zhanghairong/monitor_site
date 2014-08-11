@@ -1824,3 +1824,15 @@ input.text.focus, textarea.text.focus{ color:#000000; border-color: #599ab4;}
 .pop_content.regist_zone {}
 .pop_content.regist_zone .batch_import { float: right;}
 .pop_content.regist_zone .list { margin-top: 10px;}
+
+
+.cell_search2 {}
+.cell_search2 .item4{ display:inline-block; width:190px; position:relative; height: 50px; overflow:auto;padding: 0 10px;}
+.cell_search2 .item4 .button{display:inline-block; border-radius: 6px; width:190px; height:40px; background-color: #DAEEEE;
+    border:1px;border-bottom-style:none;border-top-style:none;border-left-style:none;border-right-style:none;}
+.cell_search2 .item4 .button:hover{ background-color: #B2DCE9; cursor:pointer;}
+.cell_search2 .item4 .current{font-weight: 900; background-color: #B2DCE9;}
+
+.cell_search .item5 .title {display:inline-block; width:50px;}
+.cell_search .item5 .ip_segment {display:inline-block; width:130px;}
+.cell_search .item5 .value {display:inline-block; width:200px;}

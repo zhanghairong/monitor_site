@@ -19,26 +19,80 @@ class CurveController extends MyController
 	    $projectlist = ProjectService::QueryProject();
         $this->renderPartial('chooseproject',array('projectlist'=>$projectlist,'currentprojectid'=>$projectid));
     }
-    public function actionLoadCurvePage()
+    public function actionActionCurvePage()
     {
         $viewarr['projectid'] = CHttpRequestInfo::Get('projectid');
         $viewarr['curveid'] = CHttpRequestInfo::Get('curveid');
-        $viewarr['date'] = CHttpRequestInfo::Get('date', date("Y-m-d"));
+        $viewarr['day'] = CHttpRequestInfo::Get('day', date("Y-m-d"));
         $viewarr['curvename'] = ProjectService::GetCurveName($viewarr['curveid']);
-        $this->renderPartial('curvepage',$viewarr);
+        $timestamp = strtotime($viewarr['day']);
+        $viewarr['ips'] = CurveService::QueryDistinctIp($viewarr['projectid'], $viewarr['curveid'], $timestamp);
+
+        $this->renderPartial('actioncurve',$viewarr);
+    }
+    public function actionDateCurvePage()
+    {
+        $viewarr['projectid'] = CHttpRequestInfo::Get('projectid');
+        $viewarr['curveid'] = CHttpRequestInfo::Get('curveid');
+        $viewarr['curvename'] = ProjectService::GetCurveName($viewarr['curveid']);
+        $viewarr['day1'] = date("Y-m-d");
+        $timestamp = strtotime($viewarr['day1']);
+        $viewarr['ips'] = CurveService::QueryDistinctIp($viewarr['projectid'], $viewarr['curveid'], $timestamp);
+        $viewarr['pages'] = CurveService::QueryDistinctPage($viewarr['projectid'], $viewarr['curveid'], $timestamp);
+
+        $viewarr['day2'] = date("Y-m-d",strtotime("-1 day"));
+        $this->renderPartial('datecurve',$viewarr);
     }
     public function actionGetLineData()
     {
         $projectid = CHttpRequestInfo::Get('projectid');
         $curveid = CHttpRequestInfo::Get('curveid');
         $day = CHttpRequestInfo::Get('day',Date("Y-m-d"));
+        $ip = explode(',', CHttpRequestInfo::Get('ips'));
+        $groupbyip = CHttpRequestInfo::Get('groupbyip', 1);
+        if (empty($ip) || empty($ip[0])) {
+            OutputManager::output(array('code'=>-1,'message'=>'please choose ip'), 'json');
+            return -1;
+        }
+        $page = CHttpRequestInfo::Get('page');
+        
+        
         $timestamp = strtotime($day);
         $interval = 5 * 60;
         
-        $ret = CurveService::GetActionData($projectid, $curveid, $timestamp);
+        $ret = CurveService::GetActionData($projectid, $curveid, $timestamp, $ip, $groupbyip, $page);
         OutputManager::output(array('code'=>0,'message'=>'success','data'=>
                 array_merge($ret, array('interval'=>$interval, 'begintime'=>$timestamp))),'json');
         //$this->renderPartial('curvepage');
+    }
+    public function actionDailyReport()
+    {
+        $viewarr['projectid'] = CHttpRequestInfo::Get('projectid');
+        $viewarr['curveid'] = CHttpRequestInfo::Get('curveid');
+        $viewarr['day'] = CHttpRequestInfo::Get('day', date("Y-m-d"));
+        $viewarr['curvename'] = ProjectService::GetCurveName($viewarr['curveid']);
+        $timestamp = strtotime($viewarr['day']);
+        $viewarr['ips'] = CurveService::QueryDistinctIp($viewarr['projectid'], $viewarr['curveid'], $timestamp);
+
+        $this->renderPartial('dailyreport',$viewarr);
+    }
+    public function actionGetDailyReportData()
+    {
+        $projectid = CHttpRequestInfo::Get('projectid');
+        $curveid = CHttpRequestInfo::Get('curveid');
+        $day = CHttpRequestInfo::Get('day',Date("Y-m-d"));
+        $ip = explode(',', CHttpRequestInfo::Get('ips'));
+        $groupbyip = CHttpRequestInfo::Get('groupbyip', 1);
+        if (empty($ip) || empty($ip[0])) {
+            OutputManager::output(array('code'=>-1,'message'=>'please choose ip'), 'json');
+            return -1;
+        }
+        
+        $timestamp = strtotime($day);
+        $interval = 5 * 60;
+        
+        $viewarr['lines'] = CurveService::QueryDailyData($projectid, $curveid, $timestamp, $ip, $groupbyip);
+        $this->renderPartial('reportdata',$viewarr);
     }
     public function actionLoadLineTest()
     {

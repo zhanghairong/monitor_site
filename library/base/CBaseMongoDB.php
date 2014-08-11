@@ -168,4 +168,24 @@ class CBaseMongoDb
         
         return $ret;
     }
+    public function distinct($collectionname, $key, $query) {
+        return $this->runCommand(array('distinct'=>$collectionname, 'key'=> $key, 'query'=>$query));
+    }
+    public function runCommand($params = array()) 
+    {
+        if($this->conn == false || empty($params))
+        {
+            return array();
+        }
+
+        $tBegin = Log::getLogTime();
+        $db = $this->conn->selectDB($this->database);  
+        $ret = $db->command($params);     
+
+        $tEnd = Log::getLogTime(); 
+        Log::WriteLog("CBaseMongoDb::runCommand, params[".
+            var_export($params,true)."] ret[".var_export($ret,true)."]", 'info', $tEnd-$tBegin, 'dbinfo');
+        
+        return $ret;
+    }
 }

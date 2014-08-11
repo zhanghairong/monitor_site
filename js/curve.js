@@ -18,8 +18,24 @@ var CurveManager = {
         var projectid = $(ele).attr("name").substr(skip.length);
         location.href = HttpRequest.basepath + "/Curve/Index?projectid=" + projectid
     },
-    LoadCurve:function(projectid, curveid) {
-        var url = HttpRequest.basepath + "/Curve/LoadCurvePage?projectid=" + projectid + "&curveid=" + curveid;
+    LoadActionCurve:function(projectid, curveid) {
+        var url = HttpRequest.basepath + "/Curve/ActionCurvePage?projectid=" + projectid + "&curveid=" + curveid;
+        LoadingManager.Show();
+        AjaxHtmlUrl(url,function(ret){
+            LoadingManager.Hide();
+            $("#id_curve_page").html(ret);
+        });
+    },
+    LoadDateCurve:function(projectid, curveid) {
+        var url = HttpRequest.basepath + "/Curve/DateCurvePage?projectid=" + projectid + "&curveid=" + curveid;
+        LoadingManager.Show();
+        AjaxHtmlUrl(url,function(ret){
+            LoadingManager.Hide();
+            $("#id_curve_page").html(ret);
+        });
+    },
+    LoadDailyReport:function(projectid, curveid) {
+        var url = HttpRequest.basepath + "/Curve/DailyReport?projectid=" + projectid + "&curveid=" + curveid;
         LoadingManager.Show();
         AjaxHtmlUrl(url,function(ret){
             LoadingManager.Hide();
@@ -30,38 +46,72 @@ var CurveManager = {
 var ChartLine = {
     highchart : null,
     
-    LoadCurveData:function(projectid,curveid,name) {
+    LoadActionChart:function(name) {
         if ( ChartLine.highchart) {
             ChartLine.highchart = null;
         }
         ChartLine.highchart = ChartLine.NewHighChart(name);
         console.log(ChartLine.highchart);
-        ChartLine.LoadData(projectid, curveid);
+        ChartLine.LoadActionLine();
     },
-    ReloadData:function(ele) {
-        var form = $(ele).parents("form");
+    LoadDateChart:function(name) {
+        if ( ChartLine.highchart) {
+            ChartLine.highchart = null;
+        }
+        ChartLine.highchart = ChartLine.NewHighChart(name);
+        console.log(ChartLine.highchart);
+        ChartLine.LoadDateLine();
+    },
+    LoadActionLine:function() {
+        var form = $("#id_search");
         var projectid = $(form).find(":input[name='projectid']").val();
         var curveid = $(form).find(":input[name='curveid']").val();
         var day = $(form).find(":input[name='day']").val();
-        ChartLine.LoadData(projectid, curveid, day);
-    },
-    LoadData:function(projectid,curveid, day) {
-        var url = HttpRequest.basepath + "/Curve/GetLineData?projectid=" + projectid + "&curveid=" + curveid;
-        //var url = HttpRequest.basepath + "/Curve/LoadLineTest?projectid=" + projectid + "&curveid=" + curveid;
-        if (typeof day != "undefined"){
-            url += "&day="+encodeURIComponent(day);
-        }
+        var ips = [];
+        $(form).find(":input[name='ip']:checked").each(function(){
+            ips.push($(this).val())
+        });
+        groupbyip = $(form).find(":input[name='groupbyip']").is(":checked") ? 1 : 0;
+        var url = HttpRequest.basepath + "/Curve/GetLineData?projectid=" + projectid + "&curveid=" + curveid + "&ips="+encodeURIComponent(ips.join(",")) +
+                "&groupbyip="+groupbyip + "&day="+encodeURIComponent(day);
+        console.log(url);        
+        
         ChartLine.ClearLines();
-        console.log(url);
+        ChartLine.LoadData(url, "");
+    },
+    LoadDateLine:function() {
+        var form = $("#id_search");
+        var projectid = $(form).find(":input[name='projectid']").val();
+        var curveid = $(form).find(":input[name='curveid']").val();
+        var ips = [];
+        $(form).find(":input[name='ip']:checked").each(function(){
+            ips.push($(this).val())
+        });
+        var page = $(form).find(":input[name='page']").val();
+        var url = HttpRequest.basepath + "/Curve/GetLineData?projectid=" + projectid + "&curveid=" + curveid + "&ips="+encodeURIComponent(ips.join(",")) +
+                "&groupbyip=1&page="+encodeURIComponent(page);        
+        
+        ChartLine.ClearLines();
+        $(form).find(":input[name='day']").each(function(){
+            var day = $(this).val();
+            var tmpurl = url + "&day="+encodeURIComponent(day);
+            console.log(tmpurl);
+            ChartLine.LoadData(tmpurl, "_" + day);
+        });
+        
+    },
+    LoadData:function(url, suffix) {
+        //var url = HttpRequest.basepath + "/Curve/LoadLineTest?projectid=" + projectid + "&curveid=" + curveid;
+        
         AjaxJsonUrl(url,function(ret){            
             if(ret.code != 0) {
+                ErrorMessageManager.Show(ret.message, 3000);
                 return;
             }
-            //console.log(ret.data);
             for (var linename in ret.data.lines) {
                 var line = {
-                    name: linename,
-                    pointStart: (ret.data.begintime + (8 * 3600) + ret.data.interval) * 1000,
+                    name: linename + suffix,
+                    pointStart: ChartLine.GetPointStart(), //(ret.data.begintime) * 1000,
                     pointInterval: ret.data.interval * 1000,
                     marker: { enabled: false },
                     data: []
@@ -83,18 +133,33 @@ var ChartLine = {
             }
         });
     },
+    GetPointStart:function() {
+        var now = new Date();
+        now.setHours(0);
+        now.setMinutes(0);
+        now.setSeconds(0);
+        now.setMilliseconds(0);
+        return now.getTime();
+    },
     ClearLines:function(){
         while(ChartLine.highchart.series.length > 0) {
             ChartLine.highchart.series[0].remove();
         }
     },
     NewHighChart:function(title) {
+        Highcharts.setOptions({global: { useUTC: false  }  }); 
         return new Highcharts.Chart({  
             chart: {
                 renderTo: 'id_curve',
                 type: 'line',
                 zoomType : "xy"
-            },  
+            },        
+            tooltip: {
+                formatter: function() {
+                    return "time: " + Highcharts.dateFormat('%H:%M', this.x) + "<br/>" +
+                        this.series.name + ": " + this.y
+                }  
+            },
             title: {
                 text: title
             },
@@ -102,9 +167,9 @@ var ChartLine = {
                 type:'datetime',
                 labels: {
                     formatter: function() {
-                        return Highcharts.dateFormat('%H:%M', this.value);
+                        return  Highcharts.dateFormat('%H:%M', this.value);
                     }
-                }
+                } 
             },
             yAxis: {
                 title: {
@@ -118,6 +183,24 @@ var ChartLine = {
                 layout: 'vertical',
             },
             series:[]
+        });
+    },
+    
+    LoadDailyData:function(){
+        var form = $("#id_search");
+        var projectid = $(form).find(":input[name='projectid']").val();
+        var curveid = $(form).find(":input[name='curveid']").val();
+        var day = $(form).find(":input[name='day']").val();
+        var ips = [];
+        $(form).find(":input[name='ip']:checked").each(function(){
+            ips.push($(this).val())
+        });
+        groupbyip = $(form).find(":input[name='groupbyip']").is(":checked") ? 1 : 0;
+        var url = HttpRequest.basepath + "/Curve/GetDailyReportData?projectid=" + projectid + "&curveid=" + curveid + "&ips="+encodeURIComponent(ips.join(",")) +
+                "&groupbyip="+groupbyip + "&day="+encodeURIComponent(day);
+        console.log(url);        
+        AjaxHtmlUrl(url,function(ret){            
+            $("#id_reportdata").html(ret);
         });
     }
 };
